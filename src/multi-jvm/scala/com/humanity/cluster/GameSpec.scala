@@ -73,10 +73,10 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
 
       // this will run on all nodes
       // use barrier to coordinate test steps
-      testConductor.enter("frontend1-started")
+      testConductor.enter("player1-started")
     }
 
-    /*"illustrate how the czar automatically registers" in within(15 seconds) {
+    "illustrate how the czar automatically registers" in within(15 seconds) {
       runOn(czar) {
         Cluster(system) join node(player1).address
         system.actorOf(Props(classOf[Czar],true), name = "czar")
@@ -88,9 +88,9 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
       }
 
       testConductor.enter("player-czar-ok")
-    }*/
+    }
 
-    /*"illustrate how more nodes register" in within(20 seconds) {
+    "illustrate how more nodes register" in within(20 seconds) {
       runOn(player2) {
         Cluster(system) join node(player1).address
         system.actorOf(Props[Player], name = "player")
@@ -105,7 +105,7 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
 
       testConductor.enter("all-ok")
 
-    }*/
+    }
 
   }
 
