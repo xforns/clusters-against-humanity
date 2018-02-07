@@ -3,11 +3,11 @@ import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 
 val akkaVersion = "2.5.8"
 
-lazy val `akka-cluster` = project
+lazy val `akka-sample-cluster-scala` = project
   .in(file("."))
   .settings(multiJvmSettings: _*)
   .settings(
-    organization := "com.greenhouse.cluster",
+    organization := "com.humanity.cluster",
     scalaVersion := "2.12.4",
     scalacOptions in Compile ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlog-reflective-calls", "-Xlint"),
     javacOptions in Compile ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
@@ -22,8 +22,9 @@ lazy val `akka-cluster` = project
       "org.scalatest" %% "scalatest" % "3.0.1" % Test,
       "io.kamon" % "sigar-loader" % "1.6.6-rev002"),
     fork in run := true,
-    mainClass in (Compile, run) := Some("com.greenhouse.cluster.App"),
+    mainClass in (Compile, run) := Some("com.humanity.cluster.GameApp"),
     // disable parallel tests
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0")))
   )
   .configs (MultiJvm)
