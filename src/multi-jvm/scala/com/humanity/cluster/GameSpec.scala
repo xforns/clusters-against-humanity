@@ -39,10 +39,9 @@ object GameSpecConfig extends MultiNodeConfig {
     """))
 
   nodeConfig(player1, player2)(
-    ConfigFactory.parseString("akka.cluster.roles =[player]"))
+    ConfigFactory.parseString("akka.cluster.roles =[player]").withFallback(ConfigFactory.load("game")))
 
-  nodeConfig(czar)(
-    ConfigFactory.parseString("akka.cluster.roles =[czar]"))
+  nodeConfig(czar)(ConfigFactory.parseString("akka.cluster.roles =[czar]").withFallback(ConfigFactory.load("game")))
 }
 
 class GameSpecMultiJvmNode1 extends GameSpec
@@ -104,7 +103,6 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
       }
 
       testConductor.enter("all-ok")
-
     }
 
   }
