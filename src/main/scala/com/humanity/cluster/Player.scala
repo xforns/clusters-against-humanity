@@ -1,8 +1,9 @@
-package com.greenhouse.cluster
+package com.humanity.cluster
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import com.typesafe.config.ConfigFactory
 import akka.pattern.pipe
+import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.Future
 
 class Player extends Actor with ActorLogging {

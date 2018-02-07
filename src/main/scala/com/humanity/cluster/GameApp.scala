@@ -1,6 +1,6 @@
-package com.greenhouse.cluster
+package com.humanity.cluster
 
-object App {
+object GameApp {
 
   def main(args : Array[String]): Unit = {
     Player.main(Seq("2551").toArray)

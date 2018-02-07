@@ -1,4 +1,4 @@
-package com.greenhouse.cluster
+package com.humanity.cluster
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props, ReceiveTimeout}
 import akka.cluster.Cluster
@@ -6,8 +6,8 @@ import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 import scala.concurrent.Await
+import scala.concurrent.duration._
 import scala.util.Try
 
 
