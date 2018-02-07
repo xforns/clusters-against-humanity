@@ -10,7 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-object GameSampleSpecConfig extends MultiNodeConfig {
+object GameSpecConfig extends MultiNodeConfig {
   // register the named roles (nodes) of the test
   val player1 = role("player1")
   val player2 = role("player2")
@@ -45,14 +45,14 @@ object GameSampleSpecConfig extends MultiNodeConfig {
     ConfigFactory.parseString("akka.cluster.roles =[czar]"))
 }
 
-class GameSampleSpecMultiJvmNode1 extends GameSampleSpec
-class GameSampleSpecMultiJvmNode2 extends GameSampleSpec
-class GameSampleSpecMultiJvmNode3 extends GameSampleSpec
+class GameSpecMultiJvmNode1 extends GameSpec
+class GameSpecMultiJvmNode2 extends GameSpec
+class GameSpecMultiJvmNode3 extends GameSpec
 
-abstract class GameSampleSpec extends MultiNodeSpec(GameSampleSpecConfig)
+abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
   with WordSpecLike with Matchers with BeforeAndAfterAll with ImplicitSender {
 
-  import GameSampleSpecConfig._
+  import GameSpecConfig._
 
   override def initialParticipants = roles.size
 
@@ -60,26 +60,26 @@ abstract class GameSampleSpec extends MultiNodeSpec(GameSampleSpecConfig)
 
   override def afterAll() = multiNodeSpecAfterAll()
 
-  "The game sample" must {
-    /*"illustrate how to start the first player" in within(15 seconds) {
+  "The game" must {
+    "illustrate how to start the first player" in within(15 seconds) {
       runOn(player1) {
         Cluster(system) join node(player1).address
         val player = system.actorOf(Props[Player], name = "player")
         player ! Question("this is a question")
         expectMsgPF() {
-          case AnswerFail(Question("this is a question")) =>
+          case _:Answer =>
         }
       }
 
       // this will run on all nodes
       // use barrier to coordinate test steps
       testConductor.enter("frontend1-started")
-    }*/
+    }
 
-    "illustrate how the czar automatically registers" in within(15 seconds) {
+    /*"illustrate how the czar automatically registers" in within(15 seconds) {
       runOn(czar) {
         Cluster(system) join node(player1).address
-        system.actorOf(Props[Czar], name = "czar")
+        system.actorOf(Props(classOf[Czar],true), name = "czar")
       }
       testConductor.enter("czar-started")
 
@@ -88,9 +88,9 @@ abstract class GameSampleSpec extends MultiNodeSpec(GameSampleSpecConfig)
       }
 
       testConductor.enter("player-czar-ok")
-    }
+    }*/
 
-    "illustrate how more nodes register" in within(20 seconds) {
+    /*"illustrate how more nodes register" in within(20 seconds) {
       runOn(player2) {
         Cluster(system) join node(player1).address
         system.actorOf(Props[Player], name = "player")
@@ -105,7 +105,7 @@ abstract class GameSampleSpec extends MultiNodeSpec(GameSampleSpecConfig)
 
       testConductor.enter("all-ok")
 
-    }
+    }*/
 
   }
 
