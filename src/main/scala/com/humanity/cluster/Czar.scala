@@ -1,7 +1,8 @@
 package com.humanity.cluster
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props, ReceiveTimeout}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Address, Props, ReceiveTimeout}
 import akka.cluster.Cluster
+import akka.cluster.ClusterEvent._
 import akka.routing.FromConfig
 import com.typesafe.config.ConfigFactory
 
@@ -11,9 +12,10 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 
-class Czar(repeat: Boolean) extends Actor with ActorLogging {
+class Czar(repeat: Boolean, totalPlayers: Int) extends Actor with ActorLogging {
 
   val player = context.actorOf(FromConfig.props(), name = "playerRouter")
+  var membersUp = Set.empty[Address]
   val answers:mutable.ListBuffer[String] = mutable.ListBuffer()
   val questions = Seq(
     "When all else fails, I can always masturbate to.. ",
@@ -24,10 +26,20 @@ class Czar(repeat: Boolean) extends Actor with ActorLogging {
     "Daddy, why is mommy crying? ")
 
   override def preStart(): Unit = {
+    Cluster(context.system).subscribe(self, InitialStateAsEvents, classOf[MemberEvent])
+  }
+
+  def startSendProcess(): Unit = {
+    if(membersUp.size!=totalPlayers) return
     sendQuestions()
     if (repeat) {
       context.setReceiveTimeout(10.seconds)
     }
+  }
+
+  def stopSendProcess(): Unit = {
+    if(membersUp.size==totalPlayers) return
+    context.setReceiveTimeout(Duration.Undefined)
   }
 
   def receive = {
@@ -41,6 +53,16 @@ class Czar(repeat: Boolean) extends Actor with ActorLogging {
     case ReceiveTimeout =>
       log.info("Timeout")
       sendQuestions()
+
+    case MemberUp(member) =>
+      log.debug("Member up: {}", member.address)
+      membersUp += member.address
+      startSendProcess()
+
+    case MemberRemoved(member, _) =>
+      log.debug("Member removed: {}", member.address)
+      membersUp -= member.address
+      stopSendProcess()
   }
 
   def sendQuestions(): Unit = {
@@ -56,13 +78,13 @@ object Czar {
       withFallback(ConfigFactory.load("game"))
 
     val system = ActorSystem("ClusterSystem", config)
-    system.log.info("Game will start when there is at least 1 czar and 1 player in the cluster.")
+    system.log.info("Game will start when there is at least 1 czar and 2 players in the cluster.")
 
     Cluster(system) registerOnMemberUp {
-      system.actorOf(Props(classOf[Czar],true), name = "czar")
+      system.actorOf(Props(classOf[Czar],true,3), name = "czar")
     }
 
-    Cluster(system).registerOnMemberRemoved {
+    Cluster(system) registerOnMemberRemoved {
       // exit JVM when ActorSystem has been terminated
       system.registerOnTermination(System.exit(0))
       // shut down ActorSystem
