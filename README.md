@@ -19,8 +19,9 @@ sbt "runMain com.humanity.cluster.App"
 * Multiple terminal windows running one actor per window (preferred!):
 
 ```
-sbt "runMain com.humanity.cluster.Player 2551"
+sbt "runMain com.humanity.cluster.Deck 2551"
 sbt "runMain com.humanity.cluster.Player 2552"
+sbt "runMain com.humanity.cluster.Player 2553"
 sbt "runMain com.humanity.cluster.Czar 0"
 ```
 
