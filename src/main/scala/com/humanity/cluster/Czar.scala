@@ -1,12 +1,11 @@
 package com.humanity.cluster
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Address, Props, ReceiveTimeout}
-import akka.cluster.Cluster
+import akka.actor.{Actor, ActorLogging, ActorSystem, Address, Props, ReceiveTimeout, RootActorPath}
+import akka.cluster.{Cluster, Member}
 import akka.cluster.ClusterEvent._
 import akka.routing.FromConfig
+import akka.pattern.{ask,pipe}
 import com.typesafe.config.ConfigFactory
-
-import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Try
@@ -14,60 +13,87 @@ import scala.util.Try
 
 class Czar(repeat: Boolean, totalPlayers: Int) extends Actor with ActorLogging {
 
+  import context.dispatcher
+
   val player = context.actorOf(FromConfig.props(), name = "playerRouter")
-  var membersUp = Set.empty[Address]
-  val answers:mutable.ListBuffer[String] = mutable.ListBuffer()
-  val questions = Seq(
-    "When all else fails, I can always masturbate to.. ",
-    "An Oedipus complex. ",
-    "Incest. ",
-    "What would grandma find disturbing, yet oddly charming? ",
-    "What brought the orgy to a grinding halt? ",
-    "Daddy, why is mommy crying? ")
+  var deck:Option[Address] = None
+  var playersUp = Set.empty[Address]
+  var questions:Seq[Question] = Seq.empty[Question]
+
+
 
   override def preStart(): Unit = {
     Cluster(context.system).subscribe(self, InitialStateAsEvents, classOf[MemberEvent])
   }
 
-  def startSendProcess(): Unit = {
-    if(membersUp.size!=totalPlayers) return
-    sendQuestions()
+  private def canGameRun(): Boolean = {
+    !questions.isEmpty && playersUp.size==totalPlayers
+  }
+
+  private def updatePlayersStatus(member: Member, memberUp: Boolean): Unit = {
+    if(!member.hasRole("player")) return
+    memberUp match {
+      case true => playersUp += member.address
+      case false => playersUp -= member.address
+    }
+  }
+
+  private def updateDeckStatus(member: Member): Unit = {
+    if(member.hasRole("deck")) deck = Some(member.address)
+  }
+
+  private def tryStartGame(): Unit = {
+    if(!canGameRun()) return
+    player ! StartGame
     if (repeat) {
       context.setReceiveTimeout(10.seconds)
     }
   }
 
-  def stopSendProcess(): Unit = {
-    if(membersUp.size==totalPlayers) return
+  private def tryStopGame(): Unit = {
+    if(!canGameRun()) return
     context.setReceiveTimeout(Duration.Undefined)
   }
 
   def receive = {
+
+    case (questions: Questions) =>
+      this.questions = questions.obj
+      tryStartGame()
+
+    case (playersReady: PlayersReady) =>
+      questions foreach { player ! _ }
+
     case (answer: Answer) =>
       log.info("{}",answer.content)
-      answers += answer.content
+      /*answers += answer.content
       if (answers.size == questions.size) {
         if (repeat) sendQuestions()
         else context.stop(self)
-      }
+      }*/
     case ReceiveTimeout =>
       log.info("Timeout")
-      sendQuestions()
+      //retrieveQuestions()
 
     case MemberUp(member) =>
       log.debug("Member up: {}", member.address)
-      membersUp += member.address
-      startSendProcess()
+      updateDeckStatus(member)
+      updatePlayersStatus(member,true)
+      tryRetrieveQuestions()
+      tryStartGame()
 
     case MemberRemoved(member, _) =>
       log.debug("Member removed: {}", member.address)
-      membersUp -= member.address
-      stopSendProcess()
+      updateDeckStatus(member)
+      updatePlayersStatus(member,false)
+      tryStopGame()
   }
 
-  def sendQuestions(): Unit = {
-    log.info("Sending questions..")
-    questions foreach {player ! Question(_)}
+  def tryRetrieveQuestions(): Unit = {
+    if(deck.isEmpty) return
+    log.info("Retrieving questions..")
+
+    context.actorSelection(RootActorPath(deck get) / "user" / "deck") ! DeckQuestion(totalPlayers)
   }
 }
 
