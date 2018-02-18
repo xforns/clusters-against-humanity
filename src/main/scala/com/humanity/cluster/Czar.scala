@@ -11,14 +11,14 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 
-class Czar(repeat: Boolean, totalPlayers: Int) extends Actor with ActorLogging {
+class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
   import context.dispatcher
 
   val player = context.actorOf(FromConfig.props(), name = "playerRouter")
   var deck:Option[Address] = None
   var playersUp = Set.empty[Address]
-  var questions:Seq[Question] = Seq.empty[Question]
+  var question:Option[Question] = None
 
 
 
@@ -27,7 +27,7 @@ class Czar(repeat: Boolean, totalPlayers: Int) extends Actor with ActorLogging {
   }
 
   private def canGameRun(): Boolean = {
-    !questions.isEmpty && playersUp.size==totalPlayers
+    !question.isEmpty && playersUp.size==totalPlayers
   }
 
   private def updatePlayersStatus(member: Member, memberUp: Boolean): Unit = {
@@ -36,18 +36,24 @@ class Czar(repeat: Boolean, totalPlayers: Int) extends Actor with ActorLogging {
       case true => playersUp += member.address
       case false => playersUp -= member.address
     }
+    log.info("PlayersUp: {}",playersUp.size)
   }
 
-  private def updateDeckStatus(member: Member): Unit = {
-    if(member.hasRole("deck")) deck = Some(member.address)
+  private def updateDeckStatus(member: Member, memberUp: Boolean): Unit = {
+    if(!member.hasRole("deck")) return
+    memberUp match {
+      case true => {
+        deck = Some(member.address)
+        tryRetrieveQuestion()
+      }
+      case false => deck = None
+    }
   }
 
   private def tryStartGame(): Unit = {
     if(!canGameRun()) return
-    player ! StartGame
-    if (repeat) {
-      context.setReceiveTimeout(10.seconds)
-    }
+    player ! StartGame(deck get)
+    context.setReceiveTimeout(5.seconds)
   }
 
   private def tryStopGame(): Unit = {
@@ -57,43 +63,43 @@ class Czar(repeat: Boolean, totalPlayers: Int) extends Actor with ActorLogging {
 
   def receive = {
 
-    case (questions: Questions) =>
-      this.questions = questions.obj
+    case (question: Question) =>
+      this.question = Some(question)
+      log.info("Question: {}",question.content)
       tryStartGame()
 
     case (playersReady: PlayersReady) =>
-      questions foreach { player ! _ }
+      player ! question
 
     case (answer: Answer) =>
-      log.info("{}",answer.content)
-      /*answers += answer.content
-      if (answers.size == questions.size) {
-        if (repeat) sendQuestions()
-        else context.stop(self)
-      }*/
+      log.info("Answer: {}",answer.content)
+
     case ReceiveTimeout =>
-      log.info("Timeout")
-      //retrieveQuestions()
+      question = None
+      tryRetrieveQuestion()
+
+    case NoQuestionsLeft =>
+      log.info("Stopping game (no more questions left)")
+
 
     case MemberUp(member) =>
       log.debug("Member up: {}", member.address)
-      updateDeckStatus(member)
+      updateDeckStatus(member,true)
       updatePlayersStatus(member,true)
-      tryRetrieveQuestions()
       tryStartGame()
 
     case MemberRemoved(member, _) =>
       log.debug("Member removed: {}", member.address)
-      updateDeckStatus(member)
+      updateDeckStatus(member,false)
       updatePlayersStatus(member,false)
       tryStopGame()
   }
 
-  def tryRetrieveQuestions(): Unit = {
+  def tryRetrieveQuestion(): Unit = {
     if(deck.isEmpty) return
-    log.info("Retrieving questions..")
+    log.info("Retrieving question..")
 
-    context.actorSelection(RootActorPath(deck get) / "user" / "deck") ! DeckQuestion(totalPlayers)
+    context.actorSelection(RootActorPath(deck get) / "user" / "deck") ! DeckQuestion("")
   }
 }
 
@@ -107,7 +113,7 @@ object Czar {
     system.log.info("Game will start when there is at least 1 czar and 2 players in the cluster.")
 
     Cluster(system) registerOnMemberUp {
-      system.actorOf(Props(classOf[Czar],true,3), name = "czar")
+      system.actorOf(Props(classOf[Czar],2), name = "czar")
     }
 
     Cluster(system) registerOnMemberRemoved {

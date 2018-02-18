@@ -1,12 +1,16 @@
 package com.humanity.cluster
 
+import java.util.UUID
+
+import akka.actor.Address
+
 case class Answer(content: String)
 case class AnswerFail(reason: String)
 case class Question(content: String)
 case class QuestionFail(reason: String)
-case class DeckQuestion(count: Int)
+case class DeckQuestion(a: String)
 case class DeckAnswer(count: Int)
-case class Questions(obj: Seq[Question])
-case class Answers(obj: Seq[Answer])
-case class StartGame()
+case class Answers(obj: Map[UUID,Answer])
+case class StartGame(deck: Address)
 case class PlayersReady()
+case class NoQuestionsLeft()

@@ -18,28 +18,43 @@ class Deck extends Actor with ActorLogging {
 
   override def receive = {
     case (question: DeckQuestion) => {
-      val sender = sender()
-      val questions:ListBuffer[Question] = ListBuffer()
+      val czar = sender()
       Future {
-        1 to question.count foreach {
-          _ => {
-            val filteredQuestions = filterOutQuestions()
-            val nextRnd = rnd.nextInt(filteredQuestions.size)
-            givenQuestions += filteredQuestions(nextRnd)._1
-            questions += filteredQuestions(nextRnd)._2
-          }
+        val filteredQuestions = filterOutQuestions()
+        if(filteredQuestions.size>0) {
+          val nextRnd = rnd.nextInt(filteredQuestions.size)
+          givenQuestions += filteredQuestions(nextRnd)._1
+          filteredQuestions(nextRnd)._2
         }
-        Questions(questions)
-      } pipeTo sender
+        else {
+          NoQuestionsLeft
+        }
+      } pipeTo czar
     }
 
     case (answer: DeckAnswer) => {
-
+      val czar = sender()
+      var answers:Map[UUID,Answer] = Map()
+      Future {
+        1 to answer.count foreach {
+          _ => {
+            val filteredAnswers = filterOutAnswers()
+            val nextRnd = rnd.nextInt(filteredAnswers.size)
+            givenAnswers += filteredAnswers(nextRnd)._1
+            answers += (filteredAnswers(nextRnd)._1 -> filteredAnswers(nextRnd)._2)
+          }
+        }
+        Answers(answers)
+      } pipeTo czar
     }
   }
 
   private def filterOutQuestions(): Seq[(UUID,Question)] = {
     DeckContents.questions.filter( o => !givenQuestions.contains(o._1) ).toSeq
+  }
+
+  private def filterOutAnswers(): Seq[(UUID,Answer)] = {
+    DeckContents.answers.filter( o => !givenAnswers.contains(o._1) ).toSeq
   }
 
 }
