@@ -26,41 +26,6 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
     Cluster(context.system).subscribe(self, InitialStateAsEvents, classOf[MemberEvent])
   }
 
-  private def canGameRun(): Boolean = {
-    !question.isEmpty && playersUp.size==totalPlayers
-  }
-
-  private def updatePlayersStatus(member: Member, memberUp: Boolean): Unit = {
-    if(!member.hasRole("player")) return
-    memberUp match {
-      case true => playersUp += member.address
-      case false => playersUp -= member.address
-    }
-    log.info("PlayersUp: {}",playersUp.size)
-  }
-
-  private def updateDeckStatus(member: Member, memberUp: Boolean): Unit = {
-    if(!member.hasRole("deck")) return
-    memberUp match {
-      case true => {
-        deck = Some(member.address)
-        tryRetrieveQuestion()
-      }
-      case false => deck = None
-    }
-  }
-
-  private def tryStartGame(): Unit = {
-    if(!canGameRun()) return
-    player ! StartGame(deck get)
-    context.setReceiveTimeout(5.seconds)
-  }
-
-  private def tryStopGame(): Unit = {
-    if(!canGameRun()) return
-    context.setReceiveTimeout(Duration.Undefined)
-  }
-
   def receive = {
 
     case (question: Question) =>
@@ -80,6 +45,7 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
     case NoQuestionsLeft =>
       log.info("Stopping game (no more questions left)")
+      tryStopGame()
 
 
     case MemberUp(member) =>
@@ -95,9 +61,44 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
       tryStopGame()
   }
 
-  def tryRetrieveQuestion(): Unit = {
+  private def canGameRun(): Boolean = {
+    !question.isEmpty && playersUp.size==totalPlayers
+  }
+
+  private def updatePlayersStatus(member: Member, memberUp: Boolean): Unit = {
+    if(!member.hasRole("player")) return
+    memberUp match {
+      case true => playersUp += member.address
+      case false => playersUp -= member.address
+    }
+  }
+
+  private def updateDeckStatus(member: Member, memberUp: Boolean): Unit = {
+    if(!member.hasRole("deck")) return
+    memberUp match {
+      case true => {
+        deck = Some(member.address)
+        tryRetrieveQuestion()
+      }
+      case false => deck = None
+    }
+  }
+
+  private def tryStartGame(): Unit = {
+    if(!canGameRun()) return
+    //player ! StartGame(deck get)
+    playersUp.foreach(address => context.actorSelection(RootActorPath(address) / "user" / "player") ! StartGameRound(deck get) )
+    context.setReceiveTimeout(5.seconds)
+  }
+
+  private def tryStopGame(): Unit = {
+    if(!canGameRun()) return
+    context.setReceiveTimeout(Duration.Undefined)
+  }
+
+  private def tryRetrieveQuestion(): Unit = {
     if(deck.isEmpty) return
-    log.info("Retrieving question..")
+    log.debug("Retrieving question..")
 
     context.actorSelection(RootActorPath(deck get) / "user" / "deck") ! DeckQuestion("")
   }
