@@ -42,8 +42,6 @@ object DeckContents {
     UUID.randomUUID() -> Answer("Italians"),
     UUID.randomUUID() -> Answer("Menstruation"),
     UUID.randomUUID() -> Answer("Drinking alone"),
-    UUID.randomUUID() -> Answer("Foreskin"),
-
-  )
+    UUID.randomUUID() -> Answer("Foreskin"))
 
 }
