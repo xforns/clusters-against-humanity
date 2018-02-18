@@ -24,14 +24,12 @@ class Player extends Actor with ActorLogging {
   def receive = {
 
     case startGame: StartGameRound =>
-      log.info("StartGame")
       czar = Some(sender())
       deck = Some(startGame.deck)
       context.actorSelection(RootActorPath(deck get) / "user" / "deck") ! DeckAnswer(5)
 
     case answers: Answers =>
       this.answers ++= answers.obj
-      log.info("Sending answer")
       Future(retrieveAnswer() get) pipeTo czar.get
   }
 

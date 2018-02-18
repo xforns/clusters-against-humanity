@@ -3,8 +3,6 @@ package com.humanity.cluster
 import akka.actor.{Actor, ActorLogging, ActorSystem, Address, Props, ReceiveTimeout, RootActorPath}
 import akka.cluster.{Cluster, Member}
 import akka.cluster.ClusterEvent._
-import akka.routing.FromConfig
-import akka.pattern.{ask,pipe}
 import com.typesafe.config.ConfigFactory
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -13,14 +11,9 @@ import scala.util.Try
 
 class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
-  import context.dispatcher
-
-  val player = context.actorOf(FromConfig.props(), name = "playerRouter")
   var deck:Option[Address] = None
-  var playersUp = Set.empty[Address]
+  var players = Set.empty[Address]
   var question:Option[Question] = None
-
-
 
   override def preStart(): Unit = {
     Cluster(context.system).subscribe(self, InitialStateAsEvents, classOf[MemberEvent])
@@ -30,14 +23,12 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
     case (question: Question) =>
       this.question = Some(question)
-      log.info("Question: {}",question.content)
+      log.info("")
+      log.info("Q: {}",question.content)
       tryStartGame()
 
-    case (playersReady: PlayersReady) =>
-      player ! question
-
     case (answer: Answer) =>
-      log.info("Answer: {}",answer.content)
+      log.info("A: {}",answer.content)
 
     case ReceiveTimeout =>
       question = None
@@ -62,14 +53,14 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
   }
 
   private def canGameRun(): Boolean = {
-    !question.isEmpty && playersUp.size==totalPlayers
+    !question.isEmpty && players.size==totalPlayers
   }
 
   private def updatePlayersStatus(member: Member, memberUp: Boolean): Unit = {
     if(!member.hasRole("player")) return
     memberUp match {
-      case true => playersUp += member.address
-      case false => playersUp -= member.address
+      case true => players += member.address
+      case false => players -= member.address
     }
   }
 
@@ -86,13 +77,11 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
   private def tryStartGame(): Unit = {
     if(!canGameRun()) return
-    //player ! StartGame(deck get)
-    playersUp.foreach(address => context.actorSelection(RootActorPath(address) / "user" / "player") ! StartGameRound(deck get) )
+    players.foreach(address => context.actorSelection(RootActorPath(address) / "user" / "player") ! StartGameRound(deck get) )
     context.setReceiveTimeout(5.seconds)
   }
 
   private def tryStopGame(): Unit = {
-    if(!canGameRun()) return
     context.setReceiveTimeout(Duration.Undefined)
   }
 
