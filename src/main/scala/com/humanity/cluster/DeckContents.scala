@@ -6,8 +6,8 @@ object DeckContents {
 
   var questions = Map(
     UUID.randomUUID() -> Question("When all else fails, I can always masturbate to.. "),
-    UUID.randomUUID() -> Question("An Oedipus complex. "),
-    UUID.randomUUID() -> Question("Incest. "),
+    UUID.randomUUID() -> Question("I drink to forget..  "),
+    UUID.randomUUID() -> Question("During sex, I like to think about.."),
     UUID.randomUUID() -> Question("What would grandma find disturbing, yet oddly charming? "),
     UUID.randomUUID() -> Question("What brought the orgy to a grinding halt? "),
     UUID.randomUUID() -> Question("Daddy, why is mommy crying? "))
@@ -19,7 +19,7 @@ object DeckContents {
     UUID.randomUUID() -> Answer("The biggest, blackest dick"),
     UUID.randomUUID() -> Answer("My worthless son"),
     UUID.randomUUID() -> Answer("Friction"),
-    UUID.randomUUID() -> Answer("Conealing a boner"),
+    UUID.randomUUID() -> Answer("Concealing a boner"),
     UUID.randomUUID() -> Answer("Amputees"),
     UUID.randomUUID() -> Answer("Panda sex"),
     UUID.randomUUID() -> Answer("Dead babies"),
