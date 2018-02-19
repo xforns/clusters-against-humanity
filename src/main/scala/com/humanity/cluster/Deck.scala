@@ -27,7 +27,7 @@ class Deck extends Actor with ActorLogging {
           filteredQuestions(nextRnd)._2
         }
         else {
-          NoQuestionsLeft
+          NoQuestionsLeft()
         }
       } pipeTo czar
     }
@@ -39,12 +39,14 @@ class Deck extends Actor with ActorLogging {
         1 to answer.count foreach {
           _ => {
             val filteredAnswers = filterOutAnswers()
-            val nextRnd = rnd.nextInt(filteredAnswers.size)
-            givenAnswers += filteredAnswers(nextRnd)._1
-            answers += (filteredAnswers(nextRnd)._1 -> filteredAnswers(nextRnd)._2)
+            if(filteredAnswers.size>0) {
+              val nextRnd = rnd.nextInt(filteredAnswers.size)
+              givenAnswers += filteredAnswers(nextRnd)._1
+              answers += (filteredAnswers(nextRnd)._1 -> filteredAnswers(nextRnd)._2)
+            }
           }
         }
-        Answers(answers)
+        if(answers.size==0) NoAnswersLeft() else Answers(answers)
       } pipeTo czar
     }
   }
