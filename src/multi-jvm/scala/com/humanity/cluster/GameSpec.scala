@@ -1,7 +1,5 @@
 package com.humanity.cluster
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.Props
 import akka.cluster.Cluster
 import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
@@ -13,7 +11,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 object GameSpecConfig extends MultiNodeConfig {
-  // register the named roles (nodes) of the test
+
   val deck = role("deck")
   val player1 = role("player1")
   val player2 = role("player2")
@@ -67,30 +65,29 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
 
   "The game" must {
 
-    "illustrate how to start the deck" in within(15 seconds) {
+    "illustrate how to start the deck" in within(4 seconds) {
       runOn(deck) {
         Cluster(system) join node(deck).address
         val deckActor = system.actorOf(Props[Deck], name = "deck")
         deckActor ! DeckQuestion(null)
-        //expectNoMessage(new FiniteDuration(5,TimeUnit.SECONDS))
         import scala.concurrent.duration._
-        expectMsgClass(20.seconds, classOf[Question])
+        expectMsgClass(2.seconds, classOf[Question])
       }
       testConductor.enter("deck-started")
     }
 
-    "illustrate how to start the first player" in within(15 seconds) {
+    "illustrate how to start the first player" in within(4 seconds) {
       runOn(player1) {
         Cluster(system) join node(player1).address
         val player = system.actorOf(Props[Player], name = "player")
         player ! StartGameRound(null)
         import scala.concurrent.duration._
-        expectNoMessage(5.seconds)
+        expectNoMessage(2.seconds)
       }
       testConductor.enter("player1-started")
     }
 
-    "illustrate how the czar automatically registers" in within(15 seconds) {
+    "illustrate how the czar automatically registers" in within(4 seconds) {
       runOn(czar) {
         Cluster(system) join node(player1).address
         system.actorOf(Props(classOf[Czar],2), name = "czar")
@@ -104,7 +101,7 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
       testConductor.enter("player-czar-ok")
     }
 
-    "illustrate how more nodes register" in within(15 seconds) {
+    "illustrate how more nodes register" in within(4 seconds) {
       runOn(player2) {
         Cluster(system) join node(player1).address
         system.actorOf(Props[Player], name = "player")
@@ -125,7 +122,7 @@ abstract class GameSpec extends MultiNodeSpec(GameSpecConfig)
     awaitAssert {
       player ! StartGameRound(null)
       import scala.concurrent.duration._
-      expectNoMessage(5.seconds)
+      expectNoMessage(2.seconds)
     }
   }
 
