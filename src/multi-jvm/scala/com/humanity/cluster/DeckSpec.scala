@@ -2,8 +2,9 @@ package com.humanity.cluster
 
 import akka.actor.{PoisonPill, Props}
 import akka.cluster.Cluster
+import akka.cluster.ClusterEvent.{CurrentClusterState, MemberUp}
 import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
-import akka.testkit.ImplicitSender
+import akka.testkit.{ImplicitSender, TestProbe}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -13,8 +14,10 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 object DeckSpecConfig extends MultiNodeConfig {
   val deck = role("deck")
+  val player1 = role("player1")
+  val player2 = role("player2")
 
-  def nodeList = Seq(deck)
+  def nodeList = Seq(deck,player1,player2)
 
   nodeList foreach { role =>
     nodeConfig(role) {
@@ -34,9 +37,13 @@ object DeckSpecConfig extends MultiNodeConfig {
     """))
 
   nodeConfig(deck)(ConfigFactory.parseString("akka.cluster.roles=[deck]").withFallback(ConfigFactory.load("game")))
+  nodeConfig(player1, player2)(
+    ConfigFactory.parseString("akka.cluster.roles=[player]").withFallback(ConfigFactory.load("game")))
 }
 
 class DeckSpecMultiJvmNode1 extends DeckSpec
+class DeckSpecMultiJvmNode2 extends DeckSpec
+class DeckSpecMultiJvmNode3 extends DeckSpec
 
 class DeckSpec extends MultiNodeSpec(DeckSpecConfig)
   with WordSpecLike with Matchers with BeforeAndAfterAll with ImplicitSender  {
@@ -148,6 +155,23 @@ class DeckSpec extends MultiNodeSpec(DeckSpecConfig)
         deckActor ! PoisonPill
       }
       testConductor.enter("deck-send-all-questions")
+    }
+
+    "send as many questions as a player asks" in within(15 seconds) {
+      runOn(player1,deck) {
+        val deckAddress = node(deck).address
+
+        Cluster(system) join deckAddress
+        system.actorOf(Props[Deck], name = "deck")
+
+        Cluster(system) join node(player1).address
+        val player = system.actorOf(Props[Player], name = "player")
+        player ! StartGameRound(deckAddress)
+
+        import scala.concurrent.duration._
+        expectMsgClass(10.seconds, classOf[Answer])
+      }
+      testConductor.enter("player1-started")
     }
 
   }

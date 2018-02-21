@@ -3,7 +3,7 @@ import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
 
 val akkaVersion = "2.5.8"
 
-lazy val `akka-sample-cluster-scala` = project
+lazy val `clusters-against-humanity` = project
   .in(file("."))
   .settings(multiJvmSettings: _*)
   .settings(

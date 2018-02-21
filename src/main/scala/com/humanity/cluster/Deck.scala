@@ -33,7 +33,7 @@ class Deck extends Actor with ActorLogging {
     }
 
     case (answer: DeckAnswer) => {
-      val czar = sender()
+      val player = sender()
       var answers:Map[UUID,Answer] = Map()
       Future {
         1 to answer.count foreach {
@@ -47,7 +47,7 @@ class Deck extends Actor with ActorLogging {
           }
         }
         if(answers.size==0) NoAnswersLeft() else Answers(answers)
-      } pipeTo czar
+      } pipeTo player
     }
   }
 

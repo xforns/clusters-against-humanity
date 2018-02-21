@@ -34,10 +34,12 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
       question = None
       tryRetrieveQuestion()
 
-    case NoQuestionsLeft =>
+    case NoQuestionsLeft() =>
       log.info("Stopping game (no more questions left)")
       tryStopGame()
 
+    case NoAnswersLeft() =>
+      log.info("No answers left for player")
 
     case MemberUp(member) =>
       log.debug("Member up: {}", member.address)
