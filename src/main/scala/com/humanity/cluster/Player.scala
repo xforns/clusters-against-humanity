@@ -22,6 +22,10 @@ class Player extends Actor with ActorLogging {
 
   def receive = {
 
+    case RestartGame =>
+      answers = Map.empty
+      givenAnswers.clear()
+
     case startGame: StartGameRound =>
       czar = sender()
       context.actorSelection(RootActorPath(startGame.deck) / "user" / "deck") ! DeckAnswer(5)

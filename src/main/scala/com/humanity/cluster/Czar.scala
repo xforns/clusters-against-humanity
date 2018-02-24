@@ -21,6 +21,11 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
   def receive = {
 
+    case RestartGame =>
+      deck = None
+      players = Set.empty[Address]
+      question = None
+
     case (question: Question) =>
       this.question = Some(question)
       log.info("")

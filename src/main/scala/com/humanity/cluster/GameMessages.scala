@@ -4,6 +4,7 @@ import java.util.UUID
 
 import akka.actor.Address
 
+case class RestartGame()
 case class Answer(content: String)
 case class AnswerFail(reason: String)
 case class Question(content: String)

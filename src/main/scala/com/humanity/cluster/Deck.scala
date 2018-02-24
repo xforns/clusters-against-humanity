@@ -17,7 +17,12 @@ class Deck extends Actor with ActorLogging {
   val rnd = scala.util.Random
 
   override def receive = {
-    case (question: DeckQuestion) => {
+
+    case RestartGame =>
+      givenQuestions.clear()
+      givenAnswers.clear()
+
+    case (question: DeckQuestion) =>
       val czar = sender()
       Future {
         val filteredQuestions = filterOutQuestions()
@@ -30,9 +35,8 @@ class Deck extends Actor with ActorLogging {
           NoQuestionsLeft()
         }
       } pipeTo czar
-    }
 
-    case (answer: DeckAnswer) => {
+    case (answer: DeckAnswer) =>
       val player = sender()
       var answers:Map[UUID,Answer] = Map()
       Future {
@@ -48,7 +52,7 @@ class Deck extends Actor with ActorLogging {
         }
         if(answers.size==0) NoAnswersLeft() else Answers(answers)
       } pipeTo player
-    }
+
   }
 
   private def filterOutQuestions(): Seq[(UUID,Question)] = {
