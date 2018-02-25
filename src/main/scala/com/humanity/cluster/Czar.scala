@@ -102,27 +102,21 @@ class Czar(totalPlayers: Int) extends Actor with ActorLogging {
 
 object Czar {
   def main(args: Array[String]): Unit = {
+    val systemName = AppArgs.systemName()
 
     val config = ConfigFactory.parseString("akka.cluster.roles = [czar]").
       withFallback(ConfigFactory.load("game"))
 
-    val system = ActorSystem("ClusterSystem", config)
-    system.log.info("Game will start when there is at least 1 czar and 2 players in the cluster.")
+    val system = ActorSystem(systemName, config)
+    system.log.info("Game will start when there is at least 1 czar, 1 deck and 1 player in the cluster.")
 
     Cluster(system) registerOnMemberUp {
       system.actorOf(Props(classOf[Czar],2), name = "czar")
     }
 
     Cluster(system) registerOnMemberRemoved {
-      // exit JVM when ActorSystem has been terminated
       system.registerOnTermination(System.exit(0))
-      // shut down ActorSystem
       system.terminate()
-
-      // In case ActorSystem shutdown takes longer than 10 seconds,
-      // exit the JVM forcefully anyway.
-      // We must spawn a separate thread to not block current thread,
-      // since that would have blocked the shutdown of the ActorSystem.
       new Thread {
         override def run(): Unit = {
           if (Try(Await.ready(system.whenTerminated, 10.seconds)).isFailure)

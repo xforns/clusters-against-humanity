@@ -68,6 +68,8 @@ class Deck extends Actor with ActorLogging {
 object Deck {
 
   def main(args: Array[String]): Unit = {
+    val systemName = AppArgs.systemName()
+
     val port = if (args.isEmpty) "0" else args(0)
     val config = ConfigFactory.parseString(s"""
         akka.remote.netty.tcp.port=$port
@@ -76,7 +78,7 @@ object Deck {
       .withFallback(ConfigFactory.parseString("akka.cluster.roles = [deck]"))
       .withFallback(ConfigFactory.load("game"))
 
-    val system = ActorSystem("ClusterSystem", config)
+    val system = ActorSystem(systemName, config)
     system.actorOf(Props[Deck], name = "deck")
   }
 

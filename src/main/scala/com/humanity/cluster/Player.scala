@@ -53,7 +53,8 @@ class Player extends Actor with ActorLogging {
 
 object Player {
   def main(args: Array[String]): Unit = {
-    // Override the configuration of the port when specified as program argument
+    val systemName = AppArgs.systemName()
+
     val port = if (args.isEmpty) "0" else args(0)
     val config = ConfigFactory.parseString(s"""
         akka.remote.netty.tcp.port=$port
@@ -62,7 +63,7 @@ object Player {
       .withFallback(ConfigFactory.parseString("akka.cluster.roles = [player]"))
       .withFallback(ConfigFactory.load("game"))
 
-    val system = ActorSystem("ClusterSystem", config)
+    val system = ActorSystem(systemName, config)
     system.actorOf(Props[Player], name = "player")
   }
 }
