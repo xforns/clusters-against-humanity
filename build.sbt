@@ -1,10 +1,12 @@
 import com.typesafe.sbt.SbtMultiJvm.multiJvmSettings
 import com.typesafe.sbt.SbtMultiJvm.MultiJvmKeys.MultiJvm
+import com.typesafe.sbt.packager.docker._
 
 val akkaVersion = "2.5.8"
 
-lazy val `clusters-against-humanity` = project
+lazy val `cah` = project
   .in(file("."))
+  .enablePlugins(JavaAppPackaging)
   .settings(multiJvmSettings: _*)
   .settings(
     organization := "com.humanity.cluster",
@@ -26,6 +28,23 @@ lazy val `clusters-against-humanity` = project
     mainClass in (Compile, run) := Some("com.humanity.cluster.GameApp"),
     // disable parallel tests
     parallelExecution in Test := false,
-    licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0")))
+    licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0"))),
+    // docker related configuration
+    dockerEntrypoint ++= Seq(
+      """-Dakka.remote.netty.tcp.hostname="$(eval "echo $AKKA_REMOTING_BIND_HOST")"""",
+      """-Dakka.remote.netty.tcp.port="$AKKA_REMOTING_BIND_PORT"""",
+      """$(IFS=','; I=0; for NODE in $AKKA_SEED_NODES; do echo "-Dakka.cluster.seed-nodes.$I=akka.tcp://$AKKA_ACTOR_SYSTEM_NAME@$NODE"; I=$(expr $I + 1); done)""",
+      "-Dakka.io.dns.resolver=async-dns",
+      "-Dakka.io.dns.async-dns.resolve-srv=true",
+      "-Dakka.io.dns.async-dns.resolv-conf=on"
+    ),
+    dockerCommands :=
+      dockerCommands.value.flatMap {
+        case ExecCmd("ENTRYPOINT", args @ _*) => Seq(Cmd("ENTRYPOINT", args.mkString(" ")))
+        case v => Seq(v)
+      },
+    dockerRepository := Some("xforns"),
+    dockerUpdateLatest := true,
+    dockerBaseImage := "local/cah"
   )
   .configs (MultiJvm)

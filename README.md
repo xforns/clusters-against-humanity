@@ -7,6 +7,14 @@ Completely based off [https://github.com/akka/akka-samples/tree/2.5/akka-sample-
 
 Based on Scala 2.12.4 and sbt 0.13.13. Uses Akka 2.5.8.
 
+## Setup
+
+Following environment variables are required on runtime:
+
+```
+actorSystemName: name of the cluster system
+```
+
 ## Running
 
 There are 2 ways to execute this:
@@ -25,8 +33,22 @@ sbt "runMain com.humanity.cluster.Player 2553"
 sbt "runMain com.humanity.cluster.Czar 0"
 ```
 
-Add as many players as you want, but only one Czar can exist!
-To stop any of the actors, Ctrl+c should do it.
+Add as many players as you want, but only one Czar and one Deck should exist! (It is not enforced.)
+To stop any of the nodes, Ctrl+c should do it.
+
+## Deployment
+
+* This project uses a Docker image found in `xforns/cah-openjdk`
+ 
+
+
+### Using (or publishing) your own image
+
+If you want to make modifications and use your own image, you can either build it locally: `docker build -t local/<image-name>:latest - < Dockerfile`
+Or build it and push it to your own Hub repository:
+* Build: `docker build -t <your-hub-username>/<image-name> - < Dockerfile`
+* Push: `docker push <your-hub-username>/<image-name>`
+
 
 ## Testing
 
