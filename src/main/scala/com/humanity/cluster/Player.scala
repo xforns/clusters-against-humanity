@@ -2,13 +2,12 @@ package com.humanity.cluster
 
 import java.util.UUID
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Address, Props, RootActorPath}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, RootActorPath}
 import akka.pattern.pipe
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 
 
 class Player extends Actor with ActorLogging {
@@ -35,12 +34,16 @@ class Player extends Actor with ActorLogging {
       Future(retrieveAnswer() get) pipeTo czar
 
     case NoAnswersLeft() =>
-      czar ! NoAnswersLeft()
+      Future(retrieveAnswer()) map {
+        case Some(answer) => answer
+        case None => NoAnswersLeft()
+      } pipeTo czar
 
   }
 
   private def retrieveAnswer(): Option[Answer] = {
     val filteredAnswers = answers.filter( o => !givenAnswers.contains(o._1) ).toSeq
+    if(filteredAnswers.isEmpty) return None
     val nextRnd = rnd.nextInt(filteredAnswers.size)
     givenAnswers += filteredAnswers(nextRnd)._1
     Some(filteredAnswers(nextRnd)._2)
