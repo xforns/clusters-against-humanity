@@ -64,7 +64,5 @@ object Player {
 
     val system = ActorSystem("ClusterSystem", config)
     system.actorOf(Props[Player], name = "player")
-
-    system.actorOf(Props[MetricsListener], name = "metricsListener")
   }
 }

@@ -1,12 +1,9 @@
 package com.humanity.cluster
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
-
-import akka.actor.{ActorNotFound, ActorRef, PoisonPill, Props}
+import akka.actor.{ActorNotFound, ActorRef, Props}
 import akka.cluster.Cluster
-import akka.cluster.ClusterEvent.{CurrentClusterState, MemberUp}
 import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
-import akka.testkit.{ImplicitSender, TestProbe}
+import akka.testkit.{ImplicitSender}
 import akka.util.Timeout
 
 import scala.concurrent.duration._
@@ -14,8 +11,7 @@ import scala.language.postfixOps
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.{Await, TimeoutException}
-import scala.util.{Failure, Success}
+import scala.concurrent.Await
 
 
 object DeckSpecConfig extends MultiNodeConfig {
@@ -24,17 +20,6 @@ object DeckSpecConfig extends MultiNodeConfig {
   val player2 = role("player2")
 
   def nodeList = Seq(deck,player1,player2)
-
-  nodeList foreach { role =>
-    nodeConfig(role) {
-      ConfigFactory.parseString(s"""
-      # Enable metrics extension in akka-cluster-metrics.
-      akka.extensions=["akka.cluster.metrics.ClusterMetricsExtension"]
-      # Sigar native library extract location during tests.
-      akka.cluster.metrics.native-library-extract-folder=target/native/${role.name}
-      """)
-    }
-  }
 
   commonConfig(ConfigFactory.parseString("""
     akka.actor.provider = cluster

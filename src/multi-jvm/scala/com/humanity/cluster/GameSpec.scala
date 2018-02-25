@@ -21,20 +21,6 @@ object GameSpecConfig extends MultiNodeConfig {
 
   def nodeList = Seq(deck, player1, player2, czar)
 
-  // Extract individual sigar library for every node.
-  nodeList foreach { role =>
-    nodeConfig(role) {
-      ConfigFactory.parseString(s"""
-      # Enable metrics extension in akka-cluster-metrics.
-      akka.extensions=["akka.cluster.metrics.ClusterMetricsExtension"]
-      # Sigar native library extract location during tests.
-      akka.cluster.metrics.native-library-extract-folder=target/native/${role.name}
-      """)
-    }
-  }
-
-  // this configuration will be used for all nodes
-  // note that no fixed host names and ports are used
   commonConfig(ConfigFactory.parseString("""
     akka.actor.provider = cluster
     # not using Artery in test due small /dev/shm in Travis
