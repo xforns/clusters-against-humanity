@@ -44,10 +44,14 @@ To stop any of the nodes, Ctrl+c should do it.
 
 ### Using (or publishing) your own image
 
-If you want to make modifications and use your own image, you can either build it locally: `docker build -t local/<image-name>:latest - < Dockerfile`
+If you want to make modifications and use your own base image, you can either build it locally: `docker build -t local/<image-name>:latest - < Dockerfile`
 Or build it and push it to your own Hub repository:
 * Build: `docker build -t <your-hub-username>/<image-name> - < Dockerfile`
 * Push: `docker push <your-hub-username>/<image-name>`
+
+Changes required in other parts of this project:
+* In `build.sbt`, modify dockerRepository with your group, and dockerBaseImage with the <image-name> of the base image you created, otherwise comment dockerBaseImage
+* In `kube-config.yaml`, modify the image name in the StatefulSet resource
 
 
 ## Testing

@@ -11,6 +11,7 @@ lazy val `cah` = project
   .settings(
     organization := "com.humanity.cluster",
     scalaVersion := "2.12.4",
+    version := "1.0.0",
     scalacOptions in Compile ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlog-reflective-calls", "-Xlint"),
     javacOptions in Compile ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
     javaOptions in run ++= Seq("-Xms128m", "-Xmx1024m", "-Djava.library.path=./target/native"),
@@ -21,6 +22,7 @@ lazy val `cah` = project
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion,
+      "com.spotify" % "docker-client" % "3.5.13",
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.scalatest" %% "scalatest" % "3.0.1" % Test,
       "io.kamon" % "sigar-loader" % "1.6.6-rev002"),
@@ -45,6 +47,6 @@ lazy val `cah` = project
       },
     dockerRepository := Some("xforns"),
     dockerUpdateLatest := true,
-    dockerBaseImage := "local/cah"
+    dockerBaseImage := "local/cah-base"
   )
   .configs (MultiJvm)
